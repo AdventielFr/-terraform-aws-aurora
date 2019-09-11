@@ -1,0 +1,63 @@
+<p align="center">
+  <table>
+    <tr>
+      <td style="text-align: center; vertical-align: middle;"><img src="_docs/logo_aws.jpg"/></td>
+      <td style="text-align: center; vertical-align: middle;"><img src="_docs/logo_adv.jpg"/></td>
+    </tr> 
+  <table>
+</p>
+
+# AWS ECS Aurora Terraform module
+
+The purpose of this module is to create an AWS Aurora cluster
+
+
+## Inputs / Outputs
+
+!INCLUDE "data.md", 1
+
+## Usage
+
+`````
+
+----------------------------
+# RDS module
+#----------------------------
+module "sample" {
+  source = "git::https://github.com/AdventielFr/terraform-aws-aurora.git?ref=1.0.0"
+  engine                              = "aurora-postgresql"
+  engine-version                      = "10.7"
+  name                                = "dev-sample-db"
+  environment                         = "dev"
+  project                             = "sample"
+  subnets                             = [
+    xxx,
+    xxx
+  ]
+  azs                                 = [
+    xxx,
+    xxx
+  ]
+  replica_count                       = 0
+  db_subnet_group_name                = [
+    xxx,
+    xxx
+  ]
+  security_groups                     = [
+    xxx,
+    xxx
+  ]
+  instance_type                       = "t2.small"
+  username                            = "superuser"
+  password                            = local.db_password
+  backup_retention_period             = 10
+  final_snapshot_identifier           = "dev-sample-db-snapshot"
+  storage_encrypted                   = true
+  apply_immediately                   = true
+  monitoring_interval                 = 10
+  cw_alarms                           = true
+  enabled_cloudwatch_logs_exports     = []
+  iam_database_authentication_enabled = false
+}
+
+`````
