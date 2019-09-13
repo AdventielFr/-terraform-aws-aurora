@@ -3,17 +3,30 @@ locals {
     Environment = var.environment
     Project = var.project
   }
+  password = var.password == "" ? random_string.password.result: var.password
 }
-
 
 // Geneate an ID when an environment is initialised
 resource "random_id" "server" {
   keepers = {
-    id = var.db_subnet_group_name
+    id = "${var.environment}-${var.project}"
   }
 
   byte_length = 8
 }
+
+resource "random_string" "password" {
+  keepers = {
+    id = "${var.environment}-${var.project}"
+  }
+  length      = 16
+  special     = false
+  min_lower   = 2
+  min_upper   = 2
+  min_numeric = 2
+  min_special = 2
+}
+
 
 #------------------------------
 # Cluster
@@ -26,7 +39,7 @@ resource "aws_rds_cluster" "default" {
 
   engine_version                      = var.engine-version
   master_username                     = var.username
-  master_password                     = var.password
+  master_password                     = local.password
   final_snapshot_identifier           = "${var.final_snapshot_identifier}-${element(random_id.server.*.hex,0)}"
   skip_final_snapshot                 = var.skip_final_snapshot
   backup_retention_period             = var.backup_retention_period

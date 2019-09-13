@@ -61,6 +61,7 @@ variable "username" {
 variable "password" {
   type        = string
   description = "The Master DB password"
+  default     = ""
 }
 
 variable "final_snapshot_identifier" {
