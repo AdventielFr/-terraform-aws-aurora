@@ -64,7 +64,6 @@ The purpose of this module is to create an AWS Aurora cluster
 | storage\_encrypted | Specifies whether the underlying storage layer should be encrypted | bool | true |
 | subnets | List of subnet IDs to use | list(string) | n/a |
 | tags | The tags for all resources | map | {} |
-| username | The Master DB username | string | n/a |
 | username | The Master DB username | string | "root" |
 
 ### Outputs
@@ -76,6 +75,7 @@ The purpose of this module is to create an AWS Aurora cluster
 | cluster\_identifier | The ID of the RDS Cluster |
 | password | The Master DB password |
 | reader\_endpoint | A read-only endpoint for the Aurora cluster, automatically load-balanced across replicas |
+| username | The Master DB username |
 
 ## Usage
 
