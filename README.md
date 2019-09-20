@@ -46,7 +46,7 @@ The purpose of this module is to create an AWS Aurora cluster
 | kms\_key\_id | The ARN for the KMS encryption key. When specifying kms\_key\_id, storage\_encrypted needs to be set to true. | string | "" |
 | monitoring\_interval | The interval (seconds) between points when Enhanced Monitoring metrics are collected | number | 0 |
 | name | Name given to DB subnet group | string | n/a |
-| password | The Master DB password | string | n/a |
+| password | The Master DB password | string | "" |
 | performance\_insights\_enabled | Whether to enable Performance Insights | bool | false |
 | port | The port on which to accept connections | number | 3306 |
 | preferred\_backup\_window | When to perform DB backups | string | "02:00-03:00" |
@@ -75,6 +75,7 @@ The purpose of this module is to create an AWS Aurora cluster
 | all\_instance\_endpoints\_list | Comma separated list of all DB instance endpoints running in cluster |
 | cluster\_endpoint | The 'writer' endpoint for the cluster |
 | cluster\_identifier | The ID of the RDS Cluster |
+| password | The Master DB password |
 | reader\_endpoint | A read-only endpoint for the Aurora cluster, automatically load-balanced across replicas |
 
 ## Usage

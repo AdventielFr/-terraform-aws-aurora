@@ -18,3 +18,8 @@ output "cluster_identifier" {
   description ="The ID of the RDS Cluster"
   value = "${join("", aws_rds_cluster.default.*.id)}"
 }
+
+output "password" {
+  description = "The Master DB password"
+  value = local.password
+}

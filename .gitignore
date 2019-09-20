@@ -12,3 +12,4 @@
 .DS_Store
 *envrc
 atlassian-ide-plugin.xml
+env/
