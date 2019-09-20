@@ -24,11 +24,6 @@ output "password" {
   value = local.password
 }
 
-output "password" {
-  description = "The Master DB password"
-  value = local.password
-}
-
 variable "username" {
   description = "The Master DB username"
   value = var.username
