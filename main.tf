@@ -123,7 +123,7 @@ data "aws_iam_policy_document" "monitoring-rds-assume-role-policy" {
 resource "aws_iam_role" "rds-enhanced-monitoring" {
   count              = var.monitoring_interval > 0 ? 1 : 0
   description        = "The RDS Aurora enhanced monitoring role"
-  name_prefix        = "rds-enh-mon-${local.cluster_identifier}"
+  name        = "rds-enh-mon-${local.cluster_identifier}-role"
   assume_role_policy = element(data.aws_iam_policy_document.monitoring-rds-assume-role-policy.*.json,0)
 }
 
