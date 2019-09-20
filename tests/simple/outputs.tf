@@ -20,5 +20,5 @@ output "cluster_identifier" {
 
 output "password" {
   description = "The Db password to connect with 'SupermanVsSpiderman' user"
-  value = random_string.password.result
+  value = module.rds.password
 }

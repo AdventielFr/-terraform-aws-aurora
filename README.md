@@ -20,7 +20,6 @@ The purpose of this module is to create an AWS Aurora cluster
 |------|-------------|:----:|:-----:|
 | apply\_immediately | Determines whether or not any DB modifications are applied immediately, or during the maintenance window | bool | false |
 | auto\_minor\_version\_upgrade | Determines whether minor engine upgrades will be performed automatically in the maintenance window | bool | true |
-| azs | The List of AZs to use | list(string) | n/a |
 | backup\_retention\_period | How long to keep backups for (in days) | number | 7 |
 | cw\_alarms | Whether to enable CloudWatch alarms - requires `cw\_sns\_topic` is specified | bool | false |
 | cw\_eval\_period\_connections | Evaluation period for the DB connections alarms | number | 1 |
@@ -45,7 +44,6 @@ The purpose of this module is to create an AWS Aurora cluster
 | instance\_type | The Instance type to use | string | "db.t2.small" |
 | kms\_key\_id | The ARN for the KMS encryption key. When specifying kms\_key\_id, storage\_encrypted needs to be set to true. | string | "" |
 | monitoring\_interval | The interval (seconds) between points when Enhanced Monitoring metrics are collected | number | 0 |
-| name | Name given to DB subnet group | string | n/a |
 | password | The Master DB password | string | "" |
 | performance\_insights\_enabled | Whether to enable Performance Insights | bool | false |
 | port | The port on which to accept connections | number | 3306 |
@@ -66,6 +64,7 @@ The purpose of this module is to create an AWS Aurora cluster
 | storage\_encrypted | Specifies whether the underlying storage layer should be encrypted | bool | true |
 | subnets | List of subnet IDs to use | list(string) | n/a |
 | tags | The tags for all resources | map | {} |
+| username | The Master DB username | string | n/a |
 | username | The Master DB username | string | "root" |
 
 ### Outputs
@@ -75,6 +74,7 @@ The purpose of this module is to create an AWS Aurora cluster
 | all\_instance\_endpoints\_list | Comma separated list of all DB instance endpoints running in cluster |
 | cluster\_endpoint | The 'writer' endpoint for the cluster |
 | cluster\_identifier | The ID of the RDS Cluster |
+| password | The Master DB password |
 | password | The Master DB password |
 | reader\_endpoint | A read-only endpoint for the Aurora cluster, automatically load-balanced across replicas |
 

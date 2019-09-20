@@ -68,18 +68,6 @@ resource "aws_security_group" "allow_all" {
   }
 }
 
-resource "random_string" "password" {
-  keepers = {
-    id = "${local.environment}-${local.project}"
-  }
-  length      = 16
-  special     = false
-  min_lower   = 2
-  min_upper   = 2
-  min_numeric = 2
-  min_special = 2
-}
-
 module "rds" {
   source                          = "../../"
   engine                          = "aurora-postgresql"
@@ -88,12 +76,10 @@ module "rds" {
   environment                     = local.environment
   project                         = local.project
   subnets                         = module.vpc.database_subnets
-  azs                             = local.azs
   security_groups                 = [aws_security_group.allow_all.id]
   db_subnet_group_name            = module.vpc.database_subnet_group
   instance_type                   = "db.t3.medium"
   username                        = "administrator"
-  password                        = random_string.password.result
   final_snapshot_identifier       = "${local.environment}-${local.project}-db-snapshot"
   apply_immediately               = true
   db_parameter_group_name             = aws_db_parameter_group.this.id
