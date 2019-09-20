@@ -35,7 +35,6 @@ resource "random_string" "password" {
 resource "aws_rds_cluster" "default" {
   
   cluster_identifier = local.cluster_identifier
-  availability_zones = var.azs
   engine             = var.engine
 
   engine_version                      = var.engine-version
@@ -66,7 +65,7 @@ resource "aws_rds_cluster" "default" {
 resource "aws_rds_cluster_instance" "cluster_instance_0" {
   depends_on = ["aws_iam_role_policy_attachment.rds-enhanced-monitoring-policy-attach"]
   identifier                   = format("%s-0", local.node_identifier_prefix)
-  cluster_identifier           = aws_rds_cluster.default.id
+  cluster_identifier           = local.cluster_identifier
   engine                       = var.engine
   engine_version               = var.engine-version
   instance_class               = var.instance_type

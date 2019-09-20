@@ -24,11 +24,6 @@ variable "identifier_prefix" {
   description = "The Prefix for cluster and instance identifier"
 }
 
-variable "azs" {
-  type        = list(string)
-  description = "The List of AZs to use"
-}
-
 variable "replica_count" {
   type        = number
   default     = 0
