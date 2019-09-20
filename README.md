@@ -75,7 +75,6 @@ The purpose of this module is to create an AWS Aurora cluster
 | cluster\_endpoint | The 'writer' endpoint for the cluster |
 | cluster\_identifier | The ID of the RDS Cluster |
 | password | The Master DB password |
-| password | The Master DB password |
 | reader\_endpoint | A read-only endpoint for the Aurora cluster, automatically load-balanced across replicas |
 
 ## Usage
