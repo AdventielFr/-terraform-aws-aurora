@@ -4,6 +4,8 @@ locals {
     Project = var.project
   }
   password = var.password == "" ? random_string.password.result: var.password
+  cluster_identifier = var.identifier_prefix != "" ? format("%s-cluster", var.identifier_prefix) : format("%s-%s-cluster", var.environment, var.project)
+  node_identifier_prefix = var.identifier_prefix != "" ? format("%s-node", var.identifier_prefix) : format("%s-%s-node-", var.environment, var.project)
 }
 
 // Geneate an ID when an environment is initialised
@@ -11,7 +13,6 @@ resource "random_id" "server" {
   keepers = {
     id = "${var.environment}-${var.project}"
   }
-
   byte_length = 8
 }
 
@@ -33,7 +34,7 @@ resource "random_string" "password" {
 #------------------------------
 resource "aws_rds_cluster" "default" {
   
-  cluster_identifier = var.identifier_prefix != "" ? format("%s-cluster", var.identifier_prefix) : format("%s-%s-cluster-aurora", var.environment, var.project)
+  cluster_identifier = local.cluster_identifier
   availability_zones = var.azs
   engine             = var.engine
 
@@ -64,7 +65,7 @@ resource "aws_rds_cluster" "default" {
 #------------------------------
 resource "aws_rds_cluster_instance" "cluster_instance_0" {
   depends_on = ["aws_iam_role_policy_attachment.rds-enhanced-monitoring-policy-attach"]
-  identifier                   = var.identifier_prefix != "" ? format("%s-node-0", var.identifier_prefix) : format("%s-%s-aurora-node-0", var.environment, var.project)
+  identifier                   = format("%s-0", local.node_identifier_prefix)
   cluster_identifier           = aws_rds_cluster.default.id
   engine                       = var.engine
   engine_version               = var.engine-version
@@ -87,8 +88,8 @@ resource "aws_rds_cluster_instance" "cluster_instance_n" {
   count                        = var.replica_scale_enabled ? var.replica_scale_min : var.replica_count
   engine                       = var.engine
   engine_version               = var.engine-version
-  identifier                   = var.identifier_prefix != "" ? format("%s-node-%d", var.identifier_prefix, count.index + 1) : format("%s-%s-aurora-node-%d", var.environment, var.project, count.index + 1)
-  cluster_identifier           = element(aws_rds_cluster.default.*.id,0)
+  identifier                   = format("%s-%d", local.node_identifier_prefix, count.index + 1)
+  cluster_identifier           = local.cluster_identifier
   instance_class               = var.instance_type
   publicly_accessible          = var.publicly_accessible
   db_subnet_group_name         = var.db_subnet_group_name
@@ -100,7 +101,7 @@ resource "aws_rds_cluster_instance" "cluster_instance_n" {
   auto_minor_version_upgrade   = var.auto_minor_version_upgrade
   promotion_tier               = count.index + 1
   performance_insights_enabled = var.performance_insights_enabled
-  tags = merge(var.tags,local.tags)
+  tags = merge(var.tags, local.tags)
 }
 
 
@@ -121,7 +122,7 @@ data "aws_iam_policy_document" "monitoring-rds-assume-role-policy" {
 
 resource "aws_iam_role" "rds-enhanced-monitoring" {
   count              = var.monitoring_interval > 0 ? 1 : 0
-  name_prefix        = "rds-enhanced-mon-${var.environment}-${var.project}-"
+  name_prefix        = "rds-enhanced-mon-${local.cluster_identifier}"
   assume_role_policy = element(data.aws_iam_policy_document.monitoring-rds-assume-role-policy.*.json,0)
 }
 
@@ -138,7 +139,7 @@ resource "aws_appautoscaling_target" "autoscaling" {
   count              = var.replica_scale_enabled ? 1 : 0
   max_capacity       = var.replica_scale_max
   min_capacity       = var.replica_scale_min
-  resource_id        = "cluster:${aws_rds_cluster.default.cluster_identifier}"
+  resource_id        = "cluster:${local.cluster_identifier}"
   scalable_dimension = "rds:cluster:ReadReplicaCount"
   service_namespace  = "rds"
 }
@@ -148,7 +149,7 @@ resource "aws_appautoscaling_policy" "autoscaling" {
   depends_on         = ["aws_appautoscaling_target.autoscaling"]
   name               = "target-metric"
   policy_type        = "TargetTrackingScaling"
-  resource_id        = "cluster:${aws_rds_cluster.default.cluster_identifier}"
+  resource_id        = "cluster:${local.cluster_identifier}"
   scalable_dimension = "rds:cluster:ReadReplicaCount"
   service_namespace  = "rds"
 
@@ -169,7 +170,7 @@ resource "aws_appautoscaling_policy" "autoscaling" {
 
 resource "aws_cloudwatch_metric_alarm" "alarm_rds_DatabaseConnections_writer" {
   count               = var.cw_alarms ? 1 : 0
-  alarm_name          = "${aws_rds_cluster.default.id}-alarm-rds-writer-DatabaseConnections"
+  alarm_name          = "${local.cluster_identifier}-alarm-rds-writer-DatabaseConnections"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = var.cw_eval_period_connections
   metric_name         = "DatabaseConnections"
@@ -177,19 +178,19 @@ resource "aws_cloudwatch_metric_alarm" "alarm_rds_DatabaseConnections_writer" {
   period              = 60
   statistic           = "Sum"
   threshold           = var.cw_max_conns
-  alarm_description   = "RDS Maximum connection Alarm for ${aws_rds_cluster.default.id} writer"
+  alarm_description   = "RDS Maximum connection Alarm for ${local.cluster_identifier} writer"
   alarm_actions       = [var.cw_sns_topic]
   ok_actions          = [var.cw_sns_topic]
 
   dimensions = {
-    DBClusterIdentifier = aws_rds_cluster.default.id
+    DBClusterIdentifier = local.cluster_identifier
     Role                = "WRITER"
   }
 }
 
 resource "aws_cloudwatch_metric_alarm" "alarm_rds_DatabaseConnections_reader" {
   count               = var.cw_alarms && var.replica_count > 0 ? 1 : 0
-  alarm_name          = "${aws_rds_cluster.default.id}-alarm-rds-reader-DatabaseConnections"
+  alarm_name          = "${local.cluster_identifier}-alarm-rds-reader-DatabaseConnections"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = var.cw_eval_period_connections
   metric_name         = "DatabaseConnections"
@@ -197,19 +198,19 @@ resource "aws_cloudwatch_metric_alarm" "alarm_rds_DatabaseConnections_reader" {
   period              = 60
   statistic           = "Maximum"
   threshold           = var.cw_max_conns
-  alarm_description   = "RDS Maximum connection Alarm for ${aws_rds_cluster.default.id} reader(s)"
+  alarm_description   = "RDS Maximum connection Alarm for ${local.cluster_identifier} reader(s)"
   alarm_actions       = [var.cw_sns_topic]
   ok_actions          = [var.cw_sns_topic]
 
   dimensions = {
-    DBClusterIdentifier = aws_rds_cluster.default.id
+    DBClusterIdentifier = local.cluster_identifier
     Role                = "READER"
   }
 }
 
 resource "aws_cloudwatch_metric_alarm" "alarm_rds_CPU_writer" {
   count               = var.cw_alarms ? 1 : 0
-  alarm_name          = "${aws_rds_cluster.default.id}-alarm-rds-writer-CPU"
+  alarm_name          = "${local.cluster_identifier}-alarm-rds-writer-CPU"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = var.cw_eval_period_cpu
   metric_name         = "CPUUtilization"
@@ -217,19 +218,19 @@ resource "aws_cloudwatch_metric_alarm" "alarm_rds_CPU_writer" {
   period              = 60
   statistic           = "Maximum"
   threshold           = var.cw_max_cpu
-  alarm_description   = "RDS CPU Alarm for ${aws_rds_cluster.default.id} writer"
+  alarm_description   = "RDS CPU Alarm for ${local.cluster_identifier} writer"
   alarm_actions       = [var.cw_sns_topic]
   ok_actions          = [var.cw_sns_topic]
 
   dimensions = {
-    DBClusterIdentifier = aws_rds_cluster.default.id
+    DBClusterIdentifier = local.cluster_identifier
     Role                = "WRITER"
   }
 }
 
 resource "aws_cloudwatch_metric_alarm" "alarm_rds_CPU_reader" {
   count               = var.cw_alarms && var.replica_count > 0 ? 1 : 0
-  alarm_name          = "${aws_rds_cluster.default.id}-alarm-rds-reader-CPU"
+  alarm_name          = "${local.cluster_identifier}-alarm-rds-reader-CPU"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = var.cw_eval_period_cpu
   metric_name         = "CPUUtilization"
@@ -237,19 +238,19 @@ resource "aws_cloudwatch_metric_alarm" "alarm_rds_CPU_reader" {
   period              = 60
   statistic           = "Maximum"
   threshold           = var.cw_max_cpu
-  alarm_description   = "RDS CPU Alarm for ${aws_rds_cluster.default.id} reader(s)"
+  alarm_description   = "RDS CPU Alarm for ${local.cluster_identifier} reader(s)"
   alarm_actions       = [var.cw_sns_topic]
   ok_actions          = [var.cw_sns_topic]
 
   dimensions = {
-    DBClusterIdentifier = aws_rds_cluster.default.id
+    DBClusterIdentifier = local.cluster_identifier
     Role                = "READER"
   }
 }
 
 resource "aws_cloudwatch_metric_alarm" "alarm_rds_replica_lag" {
   count               = var.cw_alarms && var.replica_count > 0 ? 1 : 0
-  alarm_name          = "${aws_rds_cluster.default.id}-alarm-rds-reader-AuroraReplicaLag"
+  alarm_name          = "${local.cluster_identifier}-alarm-rds-reader-AuroraReplicaLag"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = var.cw_eval_period_replica_lag
   metric_name         = "AuroraReplicaLag"
@@ -257,12 +258,12 @@ resource "aws_cloudwatch_metric_alarm" "alarm_rds_replica_lag" {
   period              = 60
   statistic           = "Maximum"
   threshold           = var.cw_max_replica_lag
-  alarm_description   = "RDS CPU Alarm for ${aws_rds_cluster.default.id}"
+  alarm_description   = "RDS CPU Alarm for ${local.cluster_identifier}"
   alarm_actions       = [var.cw_sns_topic]
   ok_actions          = [var.cw_sns_topic]
 
   dimensions = {
-    DBClusterIdentifier = aws_rds_cluster.default.id
+    DBClusterIdentifier = local.cluster_identifier
     Role                = "READER"
   }
 }
