@@ -1,8 +1,3 @@
-variable "name" {
-  type        = string
-  description = "Name given to DB subnet group"
-}
-
 variable "subnets" {
   type        = list(string)
   description = "List of subnet IDs to use"
